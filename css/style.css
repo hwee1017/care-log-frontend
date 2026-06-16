@@ -390,146 +390,73 @@ textarea {
   }
 }
 
-/* 저장된 기록은 요약을 누르면 세부 내용을 펼쳐 볼 수 있습니다. */
-.status-preview {
-  margin-top: 0.85rem;
-}
 
-.empty-message {
-  margin: 0.7rem 0 0;
-  color: var(--muted);
-}
-
-details.record-card {
+/* 개별 기록 상세 보기 */
+.record-toggle {
+  display: block;
+  width: 100%;
+  min-height: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
   padding: 0;
-  overflow: hidden;
+  color: inherit;
+  text-align: left;
 }
 
-.record-summary {
-  display: flex;
-  gap: 0.75rem;
-  align-items: flex-start;
-  justify-content: space-between;
-  padding: 0.9rem;
-  cursor: pointer;
-  list-style: none;
+.record-toggle:hover {
+  border-color: transparent;
+  background: #f3f7f5;
 }
 
-.record-summary::-webkit-details-marker {
-  display: none;
+.record-toggle:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 4px;
 }
 
-.record-summary::after {
-  content: "세부 보기";
-  flex: 0 0 auto;
-  align-self: center;
+.detail-hint {
+  display: inline-block;
+  margin-top: 0.45rem;
   color: var(--primary);
-  font-size: 0.78rem;
+  font-size: 0.82rem;
+  font-weight: 600;
 }
 
-details[open] > .record-summary::after {
-  content: "접기";
+.record-details {
+  margin-top: 0.8rem;
+  border-top: 1px solid var(--line);
+  padding-top: 0.8rem;
 }
 
-.record-summary:hover {
-  background: #f5f8f6;
-}
-
-.record-heading {
-  min-width: 0;
-}
-
-.record-heading h3 {
-  margin: 0;
-  font-size: 1rem;
-}
-
-.record-heading p {
-  margin: 0.3rem 0 0;
-  color: var(--muted);
-  font-size: 0.9rem;
-  white-space: normal;
-}
-
-.record-detail-grid {
+.detail-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0;
-  border-top: 1px solid var(--line);
-  background: #fff;
+  gap: 0.55rem;
 }
 
 .detail-row {
   display: grid;
-  grid-template-columns: minmax(110px, 0.34fr) 1fr;
-  gap: 0.75rem;
-  padding: 0.72rem 0.9rem;
-  border-bottom: 1px solid #edf0ed;
+  gap: 0.2rem;
+  border-radius: 6px;
+  padding: 0.6rem 0.7rem;
+  background: #f7f9f7;
 }
 
 .detail-row span {
   color: var(--muted);
-  font-size: 0.86rem;
+  font-size: 0.8rem;
 }
 
 .detail-row strong {
+  color: var(--text);
+  font-size: 0.95rem;
   font-weight: 600;
   white-space: pre-wrap;
   word-break: break-word;
 }
 
-details.record-card > .record-actions {
-  margin: 0;
-  padding: 0.8rem 0.9rem 0.9rem;
-  border-top: 1px solid var(--line);
-  background: #fff;
-}
-
 @media (min-width: 720px) {
-  .record-detail-grid {
+  .detail-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-
-  .detail-row {
-    grid-template-columns: minmax(105px, 0.38fr) 1fr;
-  }
-}
-
-.latest-vitals-details {
-  margin-top: 0.85rem;
-}
-
-.collapsible-card {
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.collapsible-card:hover {
-  border-color: #aac7c0;
-  box-shadow: 0 6px 16px rgba(36, 107, 98, 0.08);
-}
-
-.record-summary:focus-visible {
-  outline: 3px solid rgba(36, 107, 98, 0.25);
-  outline-offset: -3px;
-}
-
-.record-summary::before {
-  content: "▶";
-  flex: 0 0 auto;
-  margin-top: 0.1rem;
-  color: var(--primary);
-  font-size: 0.8rem;
-  transition: transform 0.15s ease;
-}
-
-details[open] > .record-summary::before {
-  transform: rotate(90deg);
-}
-
-.record-summary .badge {
-  margin-left: auto;
-}
-
-.detail-row strong {
-  min-width: 0;
 }

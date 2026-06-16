@@ -15,10 +15,15 @@
 
   function makeChart(canvasId, label, datasets) {
     const ctx = document.getElementById(canvasId);
-    if (!ctx || !window.Chart) return null;
+    if (!ctx || !window.Chart) {
+      return null;
+    }
     return new Chart(ctx, {
       type: "line",
-      data: { labels: [], datasets: datasets },
+      data: {
+        labels: [],
+        datasets: datasets
+      },
       options: {
         responsive: true,
         maintainAspectRatio: false,
@@ -73,15 +78,6 @@
     return Number.isFinite(number) ? number : null;
   }
 
-  function bloodPressurePart(item, index) {
-    const directKey = index === 0 ? "systolicBp" : "diastolicBp";
-    const direct = value(item, directKey);
-    if (direct !== null) return direct;
-    const match = String(item.bloodPressure || "").match(/(\d+)\s*[\/\-]\s*(\d+)/);
-    if (!match) return null;
-    return Number(match[index + 1]);
-  }
-
   function timeLabel(item) {
     const raw = item.measuredAt || item.createdAt || item.updatedAt;
     if (!raw) return "";
@@ -118,13 +114,16 @@
     updateOne(charts.temperature, labels, [sorted.map(function (item) { return value(item, "temperature"); })]);
     updateOne(charts.spo2, labels, [sorted.map(function (item) { return value(item, "oxygenSaturation"); })]);
     updateOne(charts.bp, labels, [
-      sorted.map(function (item) { return bloodPressurePart(item, 0); }),
-      sorted.map(function (item) { return bloodPressurePart(item, 1); })
+      sorted.map(function (item) { return value(item, "systolicBp"); }),
+      sorted.map(function (item) { return value(item, "diastolicBp"); })
     ]);
     updateOne(charts.pulse, labels, [sorted.map(function (item) { return value(item, "heartRate"); })]);
     updateOne(charts.resp, labels, [sorted.map(function (item) { return value(item, "respiratoryRate"); })]);
     updateOne(charts.pain, labels, [sorted.map(function (item) { return value(item, "painScore"); })]);
   }
 
-  window.CareCharts = { init: init, update: update };
+  window.CareCharts = {
+    init: init,
+    update: update
+  };
 })();

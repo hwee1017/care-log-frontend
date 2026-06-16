@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>가족 간병 기록</title>
-  <link rel="stylesheet" href="css/style.css?v=click-details-v4">
+  <link rel="stylesheet" href="css/style.css?v=details-edit-delete-bp-v5">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -51,13 +51,12 @@
         <label class="wide">자유 메모<textarea name="memo" rows="3"></textarea></label>
       </form>
       <p id="statusMeta" class="meta">수정 정보가 없습니다.</p>
-      <div id="statusPreview" class="record-list status-preview"></div>
+      <div id="statusSavedCard" class="record-list"></div>
     </section>
 
     <section class="panel">
       <h2>최근 활력징후</h2>
       <div id="latestVitals" class="summary-grid"></div>
-      <div id="latestVitalsDetails" class="record-list latest-vitals-details"></div>
     </section>
 
     <section class="panel">
@@ -159,9 +158,9 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="js/config.js?v=click-details-v4"></script>
-  <script src="js/api.js?v=click-details-v4"></script>
-  <script src="js/charts.js?v=click-details-v4"></script>
-  <script src="js/app.js?v=click-details-v4"></script>
+  <script src="js/config.js?v=details-edit-delete-bp-v5"></script>
+  <script src="js/api.js?v=details-edit-delete-bp-v5"></script>
+  <script src="js/charts.js?v=details-edit-delete-bp-v5"></script>
+  <script src="js/app.js?v=details-edit-delete-bp-v5"></script>
 </body>
 </html>
