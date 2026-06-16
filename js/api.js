@@ -14,7 +14,7 @@
   }
 
   function baseUrl() {
-    return (window.APP_CONFIG && window.APP_CONFIG.API_BASE_URL || "").replace(/\/$/, "");
+    return ((window.APP_CONFIG && window.APP_CONFIG.API_BASE_URL) || "").trim().replace(/\/+$/, "");
   }
 
   async function request(path, options) {
