@@ -647,9 +647,6 @@
       }, "내려받는 중");
     });
 
-    document.addEventListener("visibilitychange", function () {
-      if (!document.hidden) loadAll(true);
-    });
   }
 
   function setDefaultTimes() {
