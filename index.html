@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>가족 간병 기록</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div id="setupOverlay" class="overlay" hidden>
+    <section class="setup-panel" aria-labelledby="setupTitle">
+      <h1 id="setupTitle">가족 간병 기록</h1>
+      <p>처음 사용할 가족 접근 키와 작성자 이름을 입력해주세요.</p>
+      <form id="setupForm" class="form-grid">
+        <label>가족 접근 키<input id="setupFamilyKey" type="password" autocomplete="off" required></label>
+        <label>작성자 이름<input id="setupAuthor" type="text" autocomplete="name" required></label>
+        <button type="submit" class="primary">저장하고 시작</button>
+      </form>
+    </section>
+  </div>
+
+  <header class="topbar">
+    <div>
+      <h1>가족 간병 기록</h1>
+      <p id="lastUpdated">아직 동기화 전입니다.</p>
+    </div>
+    <div class="top-actions">
+      <span id="networkStatus" class="status-dot">확인 중</span>
+      <button id="refreshButton" type="button">새로고침</button>
+      <button id="settingsButton" type="button">접근 정보</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="panel">
+      <div class="section-head">
+        <h2>현재 상태</h2>
+        <button id="saveStatusButton" form="statusForm" type="submit" class="primary">상태 저장</button>
+      </div>
+      <form id="statusForm" class="form-grid">
+        <label>전반 상태<input name="overallStatus" type="text"></label>
+        <label>의식 상태<input name="consciousness" type="text"></label>
+        <label>통증 부위<input name="painLocation" type="text"></label>
+        <label>통증 점수<input name="painScore" type="number" min="0" max="10" step="1"></label>
+        <label>식사 상태<input name="mealStatus" type="text"></label>
+        <label>수면 상태<input name="sleepStatus" type="text"></label>
+        <label>소변 및 대변<input name="urineStool" type="text"></label>
+        <label>보행 상태<input name="mobility" type="text"></label>
+        <label class="wide">주의사항<textarea name="cautions" rows="3"></textarea></label>
+        <label class="wide">자유 메모<textarea name="memo" rows="3"></textarea></label>
+      </form>
+      <p id="statusMeta" class="meta">수정 정보가 없습니다.</p>
+    </section>
+
+    <section class="panel">
+      <h2>최근 활력징후</h2>
+      <div id="latestVitals" class="summary-grid"></div>
+    </section>
+
+    <section class="panel">
+      <div class="section-head">
+        <h2>활력징후 기록</h2>
+        <button id="saveVitalsButton" form="vitalsForm" type="submit" class="primary">추가</button>
+      </div>
+      <form id="vitalsForm" class="form-grid">
+        <input type="hidden" name="id">
+        <label>측정 시각<input name="measuredAt" type="datetime-local"></label>
+        <label>체온<input name="temperature" type="number" step="0.1"></label>
+        <label>심박수<input name="heartRate" type="number" step="1"></label>
+        <label>산소포화도<input name="oxygenSaturation" type="number" step="1"></label>
+        <label>수축기 혈압<input name="systolicBp" type="number" step="1"></label>
+        <label>이완기 혈압<input name="diastolicBp" type="number" step="1"></label>
+        <label>호흡수<input name="respiratoryRate" type="number" step="1"></label>
+        <label>통증 점수<input name="painScore" type="number" min="0" max="10" step="1"></label>
+        <label class="wide">측정 메모<textarea name="note" rows="2"></textarea></label>
+        <button id="cancelVitalsEdit" type="button" class="ghost" hidden>수정 취소</button>
+      </form>
+      <div id="vitalsList" class="record-list"></div>
+    </section>
+
+    <section class="panel">
+      <div class="section-head">
+        <h2>그래프</h2>
+        <select id="chartRange" aria-label="그래프 기간">
+          <option value="12h">최근 12시간</option>
+          <option value="24h" selected>최근 24시간</option>
+          <option value="3d">최근 3일</option>
+          <option value="all">전체</option>
+        </select>
+      </div>
+      <div class="chart-grid">
+        <div class="chart-box"><canvas id="temperatureChart"></canvas></div>
+        <div class="chart-box"><canvas id="spo2Chart"></canvas></div>
+        <div class="chart-box"><canvas id="bpChart"></canvas></div>
+        <div class="chart-box"><canvas id="pulseChart"></canvas></div>
+        <div class="chart-box"><canvas id="respChart"></canvas></div>
+        <div class="chart-box"><canvas id="painChart"></canvas></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-head">
+        <h2>이벤트 기록</h2>
+        <button id="saveEventButton" form="eventForm" type="submit" class="primary">추가</button>
+      </div>
+      <form id="eventForm" class="form-grid">
+        <input type="hidden" name="id">
+        <label>발생 시각<input name="occurredAt" type="datetime-local" required></label>
+        <label>분류<select name="category" required></select></label>
+        <label class="wide">제목<input name="title" type="text" required></label>
+        <label class="wide">상세 내용<textarea name="detail" rows="3"></textarea></label>
+        <label class="check"><input name="isImportant" type="checkbox"> 중요 기록</label>
+        <button id="cancelEventEdit" type="button" class="ghost" hidden>수정 취소</button>
+      </form>
+      <div id="eventList" class="record-list"></div>
+    </section>
+
+    <section class="panel">
+      <div class="section-head">
+        <h2>치료 및 할 일</h2>
+        <button id="saveTreatmentButton" form="treatmentForm" type="submit" class="primary">추가</button>
+      </div>
+      <form id="treatmentForm" class="form-grid">
+        <input type="hidden" name="id">
+        <label>예정 시각<input name="scheduledAt" type="datetime-local" required></label>
+        <label>상태<select name="status"></select></label>
+        <label class="wide">제목<input name="title" type="text" required></label>
+        <label class="wide">상세 내용<textarea name="detail" rows="3"></textarea></label>
+        <button id="cancelTreatmentEdit" type="button" class="ghost" hidden>수정 취소</button>
+      </form>
+      <div id="treatmentList" class="record-list"></div>
+    </section>
+
+    <section class="panel">
+      <div class="section-head">
+        <h2>교대 인계</h2>
+        <div class="inline-actions">
+          <button id="saveHandoffButton" form="handoffForm" type="submit" class="primary">인계 저장</button>
+          <button id="copyHandoffButton" type="button">복사</button>
+        </div>
+      </div>
+      <form id="handoffForm">
+        <label>직접 입력하는 인계 메모<textarea name="note" rows="5"></textarea></label>
+      </form>
+      <div id="handoffPreview" class="handoff-preview"></div>
+    </section>
+
+    <section class="panel">
+      <h2>백업</h2>
+      <div class="inline-actions">
+        <button id="exportJsonButton" type="button">전체 JSON 내려받기</button>
+        <button id="backupSqliteButton" type="button">SQLite 백업 파일 내려받기</button>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
