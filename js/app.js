@@ -669,9 +669,6 @@
     if (!requireSetup()) {
       loadAll(true);
     }
-    setInterval(function () {
-      if (!document.hidden) loadAll(true);
-    }, window.APP_CONFIG.POLL_INTERVAL_MS);
   }
 
   document.addEventListener("DOMContentLoaded", init);
