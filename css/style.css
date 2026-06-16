@@ -389,3 +389,108 @@ textarea {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* 저장된 기록은 요약을 누르면 세부 내용을 펼쳐 볼 수 있습니다. */
+.status-preview {
+  margin-top: 0.85rem;
+}
+
+.empty-message {
+  margin: 0.7rem 0 0;
+  color: var(--muted);
+}
+
+details.record-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.record-summary {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 0.9rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.record-summary::-webkit-details-marker {
+  display: none;
+}
+
+.record-summary::after {
+  content: "세부 보기";
+  flex: 0 0 auto;
+  align-self: center;
+  color: var(--primary);
+  font-size: 0.78rem;
+}
+
+details[open] > .record-summary::after {
+  content: "접기";
+}
+
+.record-summary:hover {
+  background: #f5f8f6;
+}
+
+.record-heading {
+  min-width: 0;
+}
+
+.record-heading h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.record-heading p {
+  margin: 0.3rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  white-space: normal;
+}
+
+.record-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  border-top: 1px solid var(--line);
+  background: #fff;
+}
+
+.detail-row {
+  display: grid;
+  grid-template-columns: minmax(110px, 0.34fr) 1fr;
+  gap: 0.75rem;
+  padding: 0.72rem 0.9rem;
+  border-bottom: 1px solid #edf0ed;
+}
+
+.detail-row span {
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.detail-row strong {
+  font-weight: 600;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+details.record-card > .record-actions {
+  margin: 0;
+  padding: 0.8rem 0.9rem 0.9rem;
+  border-top: 1px solid var(--line);
+  background: #fff;
+}
+
+@media (min-width: 720px) {
+  .record-detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .detail-row {
+    grid-template-columns: minmax(105px, 0.38fr) 1fr;
+  }
+}
