@@ -494,3 +494,42 @@ details.record-card > .record-actions {
     grid-template-columns: minmax(105px, 0.38fr) 1fr;
   }
 }
+
+.latest-vitals-details {
+  margin-top: 0.85rem;
+}
+
+.collapsible-card {
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.collapsible-card:hover {
+  border-color: #aac7c0;
+  box-shadow: 0 6px 16px rgba(36, 107, 98, 0.08);
+}
+
+.record-summary:focus-visible {
+  outline: 3px solid rgba(36, 107, 98, 0.25);
+  outline-offset: -3px;
+}
+
+.record-summary::before {
+  content: "▶";
+  flex: 0 0 auto;
+  margin-top: 0.1rem;
+  color: var(--primary);
+  font-size: 0.8rem;
+  transition: transform 0.15s ease;
+}
+
+details[open] > .record-summary::before {
+  transform: rotate(90deg);
+}
+
+.record-summary .badge {
+  margin-left: auto;
+}
+
+.detail-row strong {
+  min-width: 0;
+}

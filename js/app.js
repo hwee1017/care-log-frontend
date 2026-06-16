@@ -1,6 +1,9 @@
 (function () {
   "use strict";
 
+  const FRONTEND_VERSION = "click-details-v4";
+  console.info("가족 간병 기록 프론트엔드 버전:", FRONTEND_VERSION);
+
   const AUTHOR_KEY = "careLog.author";
   const STATUS_META_PREFIX = "__CARE_LOG_STATUS_V1__:";
   const categories = ["증상", "수치 측정", "약물·주사", "검사", "치료", "의사 설명", "간호사 설명", "식사", "수면", "소변·대변", "이동", "보호자 메모", "기타"];
@@ -266,8 +269,8 @@
   }
 
   function parseBloodPressure(value) {
-    if (!value) return { systolicBp: null, diastolicBp: null };
-    const match = String(value).match(/(\d+)\s*[\/\-]\s*(\d+)/);
+    if (!hasValue(value)) return { systolicBp: null, diastolicBp: null };
+    const match = String(value).trim().match(/(\d+(?:\.\d+)?)\s*[\/\-]\s*(\d+(?:\.\d+)?)/);
     if (!match) return { systolicBp: null, diastolicBp: null };
     return {
       systolicBp: Number(match[1]),
@@ -275,27 +278,48 @@
     };
   }
 
+  function firstValue(item, keys, fallback) {
+    for (const key of keys) {
+      if (hasValue(item[key])) return item[key];
+    }
+    return fallback;
+  }
+
   function normalizeVitals(raw) {
     const item = raw || {};
-    const parsedBp = parseBloodPressure(item.bloodPressure);
+    const parsedBp = parseBloodPressure(firstValue(item, ["bloodPressure", "blood_pressure"], ""));
+    const systolic = firstValue(item, ["systolicBp", "systolic", "systolicBloodPressure"], parsedBp.systolicBp);
+    const diastolic = firstValue(item, ["diastolicBp", "diastolic", "diastolicBloodPressure"], parsedBp.diastolicBp);
     return Object.assign({}, item, {
-      systolicBp: hasValue(item.systolicBp) ? Number(item.systolicBp) : parsedBp.systolicBp,
-      diastolicBp: hasValue(item.diastolicBp) ? Number(item.diastolicBp) : parsedBp.diastolicBp,
-      note: item.note !== undefined ? item.note : (item.memo || "")
+      measuredAt: firstValue(item, ["measuredAt", "measured_at"], null),
+      heartRate: firstValue(item, ["heartRate", "heart_rate"], null),
+      oxygenSaturation: firstValue(item, ["oxygenSaturation", "oxygen_saturation", "spo2"], null),
+      respiratoryRate: firstValue(item, ["respiratoryRate", "respiratory_rate"], null),
+      painScore: firstValue(item, ["painScore", "pain_score"], null),
+      systolicBp: hasValue(systolic) ? Number(systolic) : null,
+      diastolicBp: hasValue(diastolic) ? Number(diastolic) : null,
+      bloodPressure: firstValue(item, ["bloodPressure", "blood_pressure"], ""),
+      note: firstValue(item, ["note", "memo", "measurementMemo"], ""),
+      author: firstValue(item, ["author", "updatedBy", "createdBy"], "")
     });
   }
 
   function normalizeEvent(raw) {
     const item = raw || {};
     return Object.assign({}, item, {
-      detail: item.detail !== undefined ? item.detail : (item.content || "")
+      occurredAt: firstValue(item, ["occurredAt", "occurred_at"], null),
+      isImportant: Boolean(firstValue(item, ["isImportant", "important", "is_important"], false)),
+      detail: firstValue(item, ["detail", "content", "description"], "")
     });
   }
 
   function normalizeTreatment(raw) {
     const item = raw || {};
     return Object.assign({}, item, {
-      detail: item.detail !== undefined ? item.detail : (item.content || "")
+      scheduledAt: firstValue(item, ["scheduledAt", "scheduled_at"], null),
+      completedAt: firstValue(item, ["completedAt", "completed_at"], null),
+      completedBy: firstValue(item, ["completedBy", "completed_by"], null),
+      detail: firstValue(item, ["detail", "content", "description"], "")
     });
   }
 
@@ -423,9 +447,29 @@
     })[0] || null;
   }
 
+  function buildVitalsDetailGrid(item) {
+    const grid = document.createElement("div");
+    grid.className = "record-detail-grid";
+    grid.append(
+      makeDetailRow("체온", hasValue(item.temperature) ? item.temperature + " ℃" : "-"),
+      makeDetailRow("심박수", hasValue(item.heartRate) ? item.heartRate + " 회/분" : "-"),
+      makeDetailRow("산소포화도", hasValue(item.oxygenSaturation) ? item.oxygenSaturation + " %" : "-"),
+      makeDetailRow("수축기 혈압", hasValue(item.systolicBp) ? item.systolicBp + " mmHg" : "-"),
+      makeDetailRow("이완기 혈압", hasValue(item.diastolicBp) ? item.diastolicBp + " mmHg" : "-"),
+      makeDetailRow("호흡수", hasValue(item.respiratoryRate) ? item.respiratoryRate + " 회/분" : "-"),
+      makeDetailRow("통증 점수", item.painScore),
+      makeDetailRow("측정 메모", item.note),
+      makeDetailRow("작성자", item.author),
+      makeDetailRow("측정 시각", formatDate(item.measuredAt))
+    );
+    return grid;
+  }
+
   function renderLatestVitals() {
     const parent = $("#latestVitals");
+    const detailParent = $("#latestVitalsDetails");
     parent.replaceChildren();
+    detailParent.replaceChildren();
     const latest = latestVitals();
     if (!latest) {
       addSummary(parent, "최근 활력징후", "기록 없음");
@@ -440,6 +484,14 @@
     addSummary(parent, "측정 시각", formatDate(latest.measuredAt));
     addSummary(parent, "작성자", latest.author || "-");
     addSummary(parent, "측정 메모", latest.note || "-");
+
+    const detailCard = makeRecordDetails(
+      "최근 활력징후 세부 정보",
+      makeBadge(latest.author || "작성자 없음"),
+      formatDate(latest.measuredAt) + " · 이 부분을 클릭하면 혈압과 측정 메모를 포함한 전체 내용을 볼 수 있습니다."
+    );
+    detailCard.appendChild(buildVitalsDetailGrid(latest));
+    detailParent.appendChild(detailCard);
   }
 
   function renderVitals() {
@@ -471,20 +523,7 @@
         compact + " · 클릭하여 세부 내용 보기"
       );
 
-      const grid = document.createElement("div");
-      grid.className = "record-detail-grid";
-      grid.append(
-        makeDetailRow("체온", hasValue(item.temperature) ? item.temperature + " ℃" : "-"),
-        makeDetailRow("심박수", hasValue(item.heartRate) ? item.heartRate + " 회/분" : "-"),
-        makeDetailRow("산소포화도", hasValue(item.oxygenSaturation) ? item.oxygenSaturation + " %" : "-"),
-        makeDetailRow("수축기 혈압", item.systolicBp),
-        makeDetailRow("이완기 혈압", item.diastolicBp),
-        makeDetailRow("호흡수", hasValue(item.respiratoryRate) ? item.respiratoryRate + " 회/분" : "-"),
-        makeDetailRow("통증 점수", item.painScore),
-        makeDetailRow("측정 메모", item.note),
-        makeDetailRow("작성자", item.author),
-        makeDetailRow("측정 시각", formatDate(item.measuredAt))
-      );
+      const grid = buildVitalsDetailGrid(item);
 
       const actions = document.createElement("div");
       actions.className = "record-actions";
