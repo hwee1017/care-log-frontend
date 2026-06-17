@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>가족 간병 기록</title>
-  <link rel="stylesheet" href="css/style.css?v=details-edit-delete-bp-v5">
+  <link rel="stylesheet" href="css/style.css?v=fluid-tracking-1">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -51,7 +51,6 @@
         <label class="wide">자유 메모<textarea name="memo" rows="3"></textarea></label>
       </form>
       <p id="statusMeta" class="meta">수정 정보가 없습니다.</p>
-      <div id="statusSavedCard" class="record-list"></div>
     </section>
 
     <section class="panel">
@@ -81,6 +80,44 @@
     </section>
 
     <section class="panel">
+      <h2>수분 섭취 및 소변량</h2>
+      <p class="meta">물 섭취량과 소변량은 서로 별개의 기록으로 저장됩니다.</p>
+      <div class="fluid-grid">
+        <section class="fluid-panel" aria-labelledby="waterIntakeTitle">
+          <div class="section-head">
+            <h3 id="waterIntakeTitle">물 섭취 기록</h3>
+            <button id="saveWaterIntakeButton" form="waterIntakeForm" type="submit" class="primary">추가</button>
+          </div>
+          <div id="waterIntakeSummary" class="summary-grid fluid-summary"></div>
+          <form id="waterIntakeForm" class="form-grid">
+            <input type="hidden" name="id">
+            <label>마신 시각<input name="recordedAt" type="datetime-local" required></label>
+            <label>마신 양 (mL)<input name="amountMl" type="number" min="1" max="10000" step="1" required></label>
+            <label class="wide">메모<textarea name="note" rows="2"></textarea></label>
+            <button id="cancelWaterIntakeEdit" type="button" class="ghost" hidden>수정 취소</button>
+          </form>
+          <div id="waterIntakeList" class="record-list"></div>
+        </section>
+
+        <section class="fluid-panel" aria-labelledby="urineOutputTitle">
+          <div class="section-head">
+            <h3 id="urineOutputTitle">소변량 기록</h3>
+            <button id="saveUrineOutputButton" form="urineOutputForm" type="submit" class="primary">추가</button>
+          </div>
+          <div id="urineOutputSummary" class="summary-grid fluid-summary"></div>
+          <form id="urineOutputForm" class="form-grid">
+            <input type="hidden" name="id">
+            <label>측정 시각<input name="recordedAt" type="datetime-local" required></label>
+            <label>소변 양 (mL)<input name="amountMl" type="number" min="1" max="10000" step="1" required></label>
+            <label class="wide">메모<textarea name="note" rows="2"></textarea></label>
+            <button id="cancelUrineOutputEdit" type="button" class="ghost" hidden>수정 취소</button>
+          </form>
+          <div id="urineOutputList" class="record-list"></div>
+        </section>
+      </div>
+    </section>
+
+    <section class="panel">
       <div class="section-head">
         <h2>그래프</h2>
         <select id="chartRange" aria-label="그래프 기간">
@@ -97,6 +134,8 @@
         <div class="chart-box"><canvas id="pulseChart"></canvas></div>
         <div class="chart-box"><canvas id="respChart"></canvas></div>
         <div class="chart-box"><canvas id="painChart"></canvas></div>
+        <div class="chart-box"><canvas id="waterIntakeChart"></canvas></div>
+        <div class="chart-box"><canvas id="urineOutputChart"></canvas></div>
       </div>
     </section>
 
@@ -158,9 +197,9 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="js/config.js?v=details-edit-delete-bp-v5"></script>
-  <script src="js/api.js?v=details-edit-delete-bp-v5"></script>
-  <script src="js/charts.js?v=details-edit-delete-bp-v5"></script>
-  <script src="js/app.js?v=details-edit-delete-bp-v5"></script>
+  <script src="js/config.js"></script>
+  <script src="js/api.js?v=fluid-tracking-1"></script>
+  <script src="js/charts.js?v=fluid-tracking-1"></script>
+  <script src="js/app.js?v=fluid-tracking-1"></script>
 </body>
 </html>

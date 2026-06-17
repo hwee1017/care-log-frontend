@@ -10,7 +10,9 @@
     dia: "#8c6ad8",
     pulse: "#d36b2c",
     resp: "#2878a8",
-    pain: "#b04078"
+    pain: "#b04078",
+    water: "#2477a8",
+    urine: "#8a6d1d"
   };
 
   function makeChart(canvasId, label, datasets) {
@@ -61,6 +63,8 @@
     charts.pulse = makeChart("pulseChart", "심박수", [dataset("심박수", colors.pulse)]);
     charts.resp = makeChart("respChart", "호흡수", [dataset("호흡수", colors.resp)]);
     charts.pain = makeChart("painChart", "통증 점수", [dataset("통증 점수", colors.pain)]);
+    charts.waterIntake = makeChart("waterIntakeChart", "물 섭취량", [dataset("물 섭취량 (mL)", colors.water)]);
+    charts.urineOutput = makeChart("urineOutputChart", "소변량", [dataset("소변량 (mL)", colors.urine)]);
   }
 
   function cutoffFor(range) {
@@ -100,7 +104,31 @@
     chart.update();
   }
 
-  function update(vitals, range) {
+  function prepareAmountRecords(items, range) {
+    const cutoff = cutoffFor(range);
+    return (items || []).filter(function (item) {
+      const raw = item.recordedAt || item.createdAt || item.updatedAt;
+      const stamp = raw ? new Date(raw).getTime() : 0;
+      return !cutoff || stamp >= cutoff;
+    }).sort(function (a, b) {
+      return new Date(a.recordedAt || a.createdAt || 0) - new Date(b.recordedAt || b.createdAt || 0);
+    });
+  }
+
+  function amountTimeLabel(item) {
+    const raw = item.recordedAt || item.createdAt || item.updatedAt;
+    if (!raw) return "";
+    const date = new Date(raw);
+    if (Number.isNaN(date.getTime())) return raw;
+    return date.toLocaleString("ko-KR", {
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  }
+
+  function update(vitals, range, waterIntake, urineOutput) {
     const cutoff = cutoffFor(range);
     const sorted = (vitals || []).filter(function (item) {
       const raw = item.measuredAt || item.createdAt || item.updatedAt;
@@ -120,6 +148,19 @@
     updateOne(charts.pulse, labels, [sorted.map(function (item) { return value(item, "heartRate"); })]);
     updateOne(charts.resp, labels, [sorted.map(function (item) { return value(item, "respiratoryRate"); })]);
     updateOne(charts.pain, labels, [sorted.map(function (item) { return value(item, "painScore"); })]);
+
+    const waterRecords = prepareAmountRecords(waterIntake, range);
+    const urineRecords = prepareAmountRecords(urineOutput, range);
+    updateOne(
+      charts.waterIntake,
+      waterRecords.map(amountTimeLabel),
+      [waterRecords.map(function (item) { return value(item, "amountMl"); })]
+    );
+    updateOne(
+      charts.urineOutput,
+      urineRecords.map(amountTimeLabel),
+      [urineRecords.map(function (item) { return value(item, "amountMl"); })]
+    );
   }
 
   window.CareCharts = {
