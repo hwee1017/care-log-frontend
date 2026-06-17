@@ -1,6 +1,7 @@
 (function () {
   "use strict";
 
+  const FRONTEND_VERSION = "fluid-details-restored-v6";
   const AUTHOR_KEY = "careLog.author";
   const categories = ["증상", "수치 측정", "약물·주사", "검사", "치료", "의사 설명", "간호사 설명", "식사", "수면", "소변·대변", "이동", "보호자 메모", "기타"];
   const treatmentStatuses = {
@@ -195,6 +196,66 @@
     parent.appendChild(item);
   }
 
+  function textOrDash(value) {
+    return value === null || value === undefined || value === "" ? "-" : String(value);
+  }
+
+  function parseBloodPressure(value) {
+    const match = String(value || "").match(/^\s*(\d+)\s*\/\s*(\d+)\s*$/);
+    return match ? { systolicBp: Number(match[1]), diastolicBp: Number(match[2]) } : { systolicBp: null, diastolicBp: null };
+  }
+
+  function normalizeVitals(item) {
+    const source = item || {};
+    const parsed = parseBloodPressure(source.bloodPressure);
+    return Object.assign({}, source, {
+      systolicBp: source.systolicBp ?? parsed.systolicBp,
+      diastolicBp: source.diastolicBp ?? parsed.diastolicBp,
+      note: source.note ?? source.memo ?? ""
+    });
+  }
+
+  function normalizeEvent(item) {
+    const source = item || {};
+    return Object.assign({}, source, { detail: source.detail ?? source.content ?? "" });
+  }
+
+  function normalizeTreatment(item) {
+    const source = item || {};
+    return Object.assign({}, source, { detail: source.detail ?? source.content ?? "" });
+  }
+
+  function makeDetailRow(label, value) {
+    const row = document.createElement("div");
+    row.className = "detail-row";
+    const labelNode = document.createElement("span");
+    labelNode.textContent = label;
+    const valueNode = document.createElement("strong");
+    valueNode.textContent = textOrDash(value);
+    row.append(labelNode, valueNode);
+    return row;
+  }
+
+  function makeToggleButton(titleNode, summaryNode, detailsNode) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "record-toggle";
+    button.setAttribute("aria-expanded", "false");
+    const hint = document.createElement("span");
+    hint.className = "detail-hint";
+    hint.textContent = "세부 정보 보기";
+    button.append(titleNode);
+    if (summaryNode) button.append(summaryNode);
+    button.append(hint);
+    button.addEventListener("click", function () {
+      const opening = detailsNode.hidden;
+      detailsNode.hidden = !opening;
+      button.setAttribute("aria-expanded", opening ? "true" : "false");
+      hint.textContent = opening ? "세부 정보 닫기" : "세부 정보 보기";
+    });
+    return button;
+  }
+
   function renderStatus() {
     setFormValues($("#statusForm"), state.status || {});
     const editor = state.status.updatedBy || state.status.author || "-";
@@ -249,16 +310,17 @@
   function renderLatestVitals() {
     const parent = $("#latestVitals");
     parent.replaceChildren();
-    const latest = latestVitals();
-    if (!latest) {
+    const raw = latestVitals();
+    if (!raw) {
       addSummary(parent, "최근 활력징후", "기록 없음");
       return;
     }
-    addSummary(parent, "체온", latest.temperature ? latest.temperature + " ℃" : "-");
-    addSummary(parent, "심박수", latest.heartRate ? latest.heartRate + " 회/분" : "-");
-    addSummary(parent, "산소포화도", latest.oxygenSaturation ? latest.oxygenSaturation + " %" : "-");
-    addSummary(parent, "혈압", latest.systolicBp && latest.diastolicBp ? latest.systolicBp + "/" + latest.diastolicBp : "-");
-    addSummary(parent, "호흡수", latest.respiratoryRate ? latest.respiratoryRate + " 회/분" : "-");
+    const latest = normalizeVitals(raw);
+    addSummary(parent, "체온", latest.temperature !== null && latest.temperature !== undefined ? latest.temperature + " ℃" : "-");
+    addSummary(parent, "심박수", latest.heartRate !== null && latest.heartRate !== undefined ? latest.heartRate + " 회/분" : "-");
+    addSummary(parent, "산소포화도", latest.oxygenSaturation !== null && latest.oxygenSaturation !== undefined ? latest.oxygenSaturation + " %" : "-");
+    addSummary(parent, "혈압", latest.systolicBp !== null && latest.diastolicBp !== null ? latest.systolicBp + "/" + latest.diastolicBp : "-");
+    addSummary(parent, "호흡수", latest.respiratoryRate !== null && latest.respiratoryRate !== undefined ? latest.respiratoryRate + " 회/분" : "-");
     addSummary(parent, "통증 점수", latest.painScore !== null && latest.painScore !== undefined ? String(latest.painScore) : "-");
     addSummary(parent, "측정 시각", formatDate(latest.measuredAt));
     addSummary(parent, "작성자", latest.author || "-");
@@ -285,7 +347,7 @@
     const list = $("#vitalsList");
     list.replaceChildren();
     const sorted = state.vitals.slice().sort(function (a, b) {
-      return new Date(b.measuredAt || b.createdAt || 0) - new Date(a.measuredAt || a.createdAt || 0);
+      return new Date(b.measuredAt || 0) - new Date(a.measuredAt || 0);
     });
     if (!sorted.length) {
       const empty = document.createElement("p");
@@ -293,33 +355,46 @@
       list.appendChild(empty);
       return;
     }
-    sorted.forEach(function (item) {
+    sorted.forEach(function (rawItem) {
+      const item = normalizeVitals(rawItem);
       const card = document.createElement("article");
       card.className = "record-card";
       const title = document.createElement("div");
       title.className = "record-title";
       const h3 = document.createElement("h3");
       h3.textContent = formatDate(item.measuredAt);
-      title.appendChild(h3);
-      title.appendChild(makeBadge(item.author || "작성자 없음"));
+      title.append(h3, makeBadge(item.author || "작성자 없음"));
       const body = document.createElement("p");
       body.textContent = [
-        item.temperature ? "체온 " + item.temperature + "℃" : "",
-        item.heartRate ? "심박수 " + item.heartRate : "",
-        item.oxygenSaturation ? "산소포화도 " + item.oxygenSaturation + "%" : "",
-        item.systolicBp && item.diastolicBp ? "혈압 " + item.systolicBp + "/" + item.diastolicBp : "",
-        item.respiratoryRate ? "호흡수 " + item.respiratoryRate : "",
+        item.temperature !== null && item.temperature !== undefined ? "체온 " + item.temperature + "℃" : "",
+        item.heartRate !== null && item.heartRate !== undefined ? "심박수 " + item.heartRate : "",
+        item.oxygenSaturation !== null && item.oxygenSaturation !== undefined ? "산소포화도 " + item.oxygenSaturation + "%" : "",
+        item.systolicBp !== null && item.diastolicBp !== null ? "혈압 " + item.systolicBp + "/" + item.diastolicBp : "",
+        item.respiratoryRate !== null && item.respiratoryRate !== undefined ? "호흡수 " + item.respiratoryRate : "",
         item.painScore !== null && item.painScore !== undefined ? "통증 " + item.painScore : ""
       ].filter(Boolean).join(" · ") || "수치 없음";
-      const note = document.createElement("p");
-      note.textContent = item.note || "";
+      const details = document.createElement("div");
+      details.className = "record-details detail-grid";
+      details.hidden = true;
+      details.append(
+        makeDetailRow("체온", item.temperature !== null && item.temperature !== undefined ? item.temperature + " ℃" : "-"),
+        makeDetailRow("심박수", item.heartRate !== null && item.heartRate !== undefined ? item.heartRate + " 회/분" : "-"),
+        makeDetailRow("산소포화도", item.oxygenSaturation !== null && item.oxygenSaturation !== undefined ? item.oxygenSaturation + " %" : "-"),
+        makeDetailRow("수축기 혈압", item.systolicBp),
+        makeDetailRow("이완기 혈압", item.diastolicBp),
+        makeDetailRow("호흡수", item.respiratoryRate !== null && item.respiratoryRate !== undefined ? item.respiratoryRate + " 회/분" : "-"),
+        makeDetailRow("통증 점수", item.painScore),
+        makeDetailRow("측정 메모", item.note),
+        makeDetailRow("작성자", item.author),
+        makeDetailRow("측정 시각", formatDate(item.measuredAt))
+      );
       const actions = document.createElement("div");
       actions.className = "record-actions";
       actions.append(
         makeButton("수정", "", function () { editVitals(item); }),
         makeButton("삭제", "danger", function () { removeVitals(item.id); })
       );
-      card.append(title, body, note, actions);
+      card.append(makeToggleButton(title, body, details), details, actions);
       list.appendChild(card);
     });
   }
@@ -344,34 +419,32 @@
       list.appendChild(empty);
       return;
     }
-
     sorted.forEach(function (item) {
       const card = document.createElement("article");
       card.className = "record-card";
-
       const title = document.createElement("div");
       title.className = "record-title";
       const h3 = document.createElement("h3");
       h3.textContent = formatDate(item.recordedAt);
-      title.appendChild(h3);
-      title.appendChild(makeBadge(item.author || "작성자 없음"));
-
-      const amount = document.createElement("p");
-      amount.className = "record-amount";
-      amount.textContent = item.amountMl + " mL";
-
-      const note = document.createElement("p");
-      note.className = "record-note";
-      note.textContent = item.note || "메모 없음";
-
+      title.append(h3, makeBadge(item.author || "작성자 없음"));
+      const summary = document.createElement("p");
+      summary.textContent = item.amountMl + " mL";
+      const details = document.createElement("div");
+      details.className = "record-details detail-grid";
+      details.hidden = true;
+      details.append(
+        makeDetailRow("기록량", item.amountMl + " mL"),
+        makeDetailRow("메모", item.note),
+        makeDetailRow("작성자", item.author),
+        makeDetailRow("기록 시각", formatDate(item.recordedAt))
+      );
       const actions = document.createElement("div");
       actions.className = "record-actions";
       actions.append(
         makeButton("수정", "", function () { editHandler(item); }),
         makeButton("삭제", "danger", function () { removeHandler(item.id); })
       );
-
-      card.append(title, amount, note, actions);
+      card.append(makeToggleButton(title, summary, details), details, actions);
       list.appendChild(card);
     });
   }
@@ -412,7 +485,7 @@
     const list = $("#eventList");
     list.replaceChildren();
     const sorted = state.events.slice().sort(function (a, b) {
-      return new Date(b.occurredAt || b.createdAt || 0) - new Date(a.occurredAt || a.createdAt || 0);
+      return new Date(b.occurredAt || 0) - new Date(a.occurredAt || 0);
     });
     if (!sorted.length) {
       const empty = document.createElement("p");
@@ -420,26 +493,35 @@
       list.appendChild(empty);
       return;
     }
-    sorted.forEach(function (item) {
+    sorted.forEach(function (rawItem) {
+      const item = normalizeEvent(rawItem);
       const card = document.createElement("article");
       card.className = "record-card";
       const title = document.createElement("div");
       title.className = "record-title";
       const h3 = document.createElement("h3");
       h3.textContent = item.title || "제목 없음";
-      title.appendChild(h3);
-      title.appendChild(makeBadge(item.category || "기타", item.isImportant ? "important" : ""));
+      title.append(h3, makeBadge(item.category || "기타", item.isImportant ? "important" : ""));
       const meta = document.createElement("p");
       meta.textContent = formatDate(item.occurredAt) + " · " + (item.author || "작성자 없음") + (item.isImportant ? " · 중요 기록" : "");
-      const detail = document.createElement("p");
-      detail.textContent = item.detail || "";
+      const details = document.createElement("div");
+      details.className = "record-details detail-grid";
+      details.hidden = true;
+      details.append(
+        makeDetailRow("분류", item.category),
+        makeDetailRow("제목", item.title),
+        makeDetailRow("상세 내용", item.detail),
+        makeDetailRow("중요 기록", item.isImportant ? "예" : "아니요"),
+        makeDetailRow("작성자", item.author),
+        makeDetailRow("발생 시각", formatDate(item.occurredAt))
+      );
       const actions = document.createElement("div");
       actions.className = "record-actions";
       actions.append(
         makeButton("수정", "", function () { editEvent(item); }),
         makeButton("삭제", "danger", function () { removeEvent(item.id); })
       );
-      card.append(title, meta, detail, actions);
+      card.append(makeToggleButton(title, meta, details), details, actions);
       list.appendChild(card);
     });
   }
@@ -447,37 +529,47 @@
   function renderTreatments() {
     const list = $("#treatmentList");
     list.replaceChildren();
+    const order = { planned: 0, completed: 1, cancelled: 2 };
     const sorted = state.treatments.slice().sort(function (a, b) {
-      return new Date(a.scheduledAt || 0) - new Date(b.scheduledAt || 0);
+      const statusDiff = (order[a.status] ?? 9) - (order[b.status] ?? 9);
+      return statusDiff || new Date(a.scheduledAt || 0) - new Date(b.scheduledAt || 0);
     });
     if (!sorted.length) {
       const empty = document.createElement("p");
-      empty.textContent = "치료 및 할 일이 없습니다.";
+      empty.textContent = "치료 및 할 일 기록이 없습니다.";
       list.appendChild(empty);
       return;
     }
-    sorted.forEach(function (item) {
+    sorted.forEach(function (rawItem) {
+      const item = normalizeTreatment(rawItem);
       const card = document.createElement("article");
       card.className = "record-card";
       const title = document.createElement("div");
       title.className = "record-title";
       const h3 = document.createElement("h3");
       h3.textContent = item.title || "제목 없음";
-      title.appendChild(h3);
-      title.appendChild(makeBadge(treatmentStatuses[item.status] || item.status || "예정", item.status || ""));
+      title.append(h3, makeBadge(treatmentStatuses[item.status] || item.status || "예정", item.status || ""));
       const meta = document.createElement("p");
       meta.textContent = formatDate(item.scheduledAt) + " · " + (item.author || "작성자 없음");
-      const detail = document.createElement("p");
-      detail.textContent = item.detail || "";
+      const details = document.createElement("div");
+      details.className = "record-details detail-grid";
+      details.hidden = true;
+      details.append(
+        makeDetailRow("제목", item.title),
+        makeDetailRow("상세 내용", item.detail),
+        makeDetailRow("진행 상태", treatmentStatuses[item.status] || item.status),
+        makeDetailRow("예정 시각", formatDate(item.scheduledAt)),
+        makeDetailRow("완료 시각", formatDate(item.completedAt)),
+        makeDetailRow("완료 처리자", item.completedBy),
+        makeDetailRow("작성자", item.author)
+      );
       const actions = document.createElement("div");
       actions.className = "record-actions";
-      actions.append(
-        makeButton("수정", "", function () { editTreatment(item); }),
-        makeButton("완료", "", function () { changeTreatmentStatus(item, "completed"); }),
-        makeButton("취소", "", function () { changeTreatmentStatus(item, "cancelled"); }),
-        makeButton("삭제", "danger", function () { removeTreatment(item.id); })
-      );
-      card.append(title, meta, detail, actions);
+      actions.append(makeButton("수정", "", function () { editTreatment(item); }));
+      if (item.status !== "completed") actions.append(makeButton("완료", "", function () { changeTreatmentStatus(item, "completed"); }));
+      if (item.status !== "cancelled") actions.append(makeButton("취소", "", function () { changeTreatmentStatus(item, "cancelled"); }));
+      actions.append(makeButton("삭제", "danger", function () { removeTreatment(item.id); }));
+      card.append(makeToggleButton(title, meta, details), details, actions);
       list.appendChild(card);
     });
   }
@@ -557,11 +649,11 @@
       ]);
       state.status = results[1] || {};
       state.handoff = results[2] || {};
-      state.vitals = ((results[3] && results[3].items) || []).map(normalizeVitalsItem);
+      state.vitals = ((results[3] && results[3].items) || []).map(normalizeVitals);
       state.waterIntake = (results[4] && results[4].items) || [];
       state.urineOutput = (results[5] && results[5].items) || [];
-      state.events = (results[6] && results[6].items) || [];
-      state.treatments = (results[7] && results[7].items) || [];
+      state.events = ((results[6] && results[6].items) || []).map(normalizeEvent);
+      state.treatments = ((results[7] && results[7].items) || []).map(normalizeTreatment);
       renderAll();
       setNetworkStatus(true, "연결됨");
       $("#lastUpdated").textContent = "마지막 동기화: " + formatDate(new Date().toISOString());
@@ -603,7 +695,7 @@
   }
 
   function editVitals(item) {
-    setFormValues($("#vitalsForm"), item);
+    setFormValues($("#vitalsForm"), normalizeVitals(item));
     $("#saveVitalsButton").textContent = "수정 저장";
     $("#cancelVitalsEdit").hidden = false;
     window.scrollTo({ top: $("#vitalsForm").offsetTop - 90, behavior: "smooth" });
@@ -624,13 +716,13 @@
   }
 
   function editEvent(item) {
-    setFormValues($("#eventForm"), item);
+    setFormValues($("#eventForm"), normalizeEvent(item));
     $("#saveEventButton").textContent = "수정 저장";
     $("#cancelEventEdit").hidden = false;
   }
 
   function editTreatment(item) {
-    setFormValues($("#treatmentForm"), item);
+    setFormValues($("#treatmentForm"), normalizeTreatment(item));
     $("#saveTreatmentButton").textContent = "수정 저장";
     $("#cancelTreatmentEdit").hidden = false;
   }
@@ -909,6 +1001,7 @@
   }
 
   function init() {
+    console.log("가족 간병 기록 프론트엔드 버전:", FRONTEND_VERSION);
     fillSelects();
     window.CareCharts.init();
     bindForms();

@@ -436,3 +436,74 @@ textarea {
   }
 }
 
+
+
+/* 개별 기록 상세 보기 */
+.record-toggle {
+  display: block;
+  width: 100%;
+  min-height: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  text-align: left;
+}
+
+.record-toggle:hover {
+  border-color: transparent;
+  background: #f3f7f5;
+}
+
+.record-toggle:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 4px;
+}
+
+.detail-hint {
+  display: inline-block;
+  margin-top: 0.45rem;
+  color: var(--primary);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.record-details {
+  margin-top: 0.8rem;
+  border-top: 1px solid var(--line);
+  padding-top: 0.8rem;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.55rem;
+}
+
+.detail-row {
+  display: grid;
+  gap: 0.2rem;
+  border-radius: 6px;
+  padding: 0.6rem 0.7rem;
+  background: #f7f9f7;
+}
+
+.detail-row span {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.detail-row strong {
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 600;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+@media (min-width: 720px) {
+  .detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
